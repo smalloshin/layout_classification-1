@@ -14,3 +14,31 @@ conda install pycocotools
 pip install git+https://github.com/facebookresearch/detectron2@main
 pip install av
 ```
+
+## Project Structure
+
+    .
+    ├── app
+    │   ├── main.py
+    │   ├── visualize.py
+    │   ├── detect.py
+    │
+    ├── samples
+    │   ├── *.png
+    │
+
+- main.py: main entry point of prototype
+- detect.py: functions and setup of layout classification modelling
+- visualize.py: functions to visualize layout outputs in the prototype
+
+## Prototype Usage
+
+After select the input image or upload the PDF file, one can choose a model based on the content of the images.
+
+- Choices of Model:
+    - Magazine: Trained from the PrimalLayout dataset, favors magazine
+    images, and includes 6 different classes: {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion", 4:"MathsRegion", 5:"SeparatorRegion", 6:"OtherRegion"}
+    - NewsPaper: Trained from the NewspaperNavigator dataset, it contains 7 classes of layout mainly targeting newspapers,
+    {0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon", 4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"}
+    - Academic Papers: Trained from the PubLayNet dataset, mostly used in academic paper and reports
+    , it includes 5 classes:{0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"}

@@ -13,23 +13,26 @@ import matplotlib.pyplot as plt
 import layoutparser as lp
 import cv2
 from pdf2image import convert_from_path, convert_from_bytes
+from detect import detect_text
 
 primaLayout = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion", 4:"MathsRegion",
                5:"SeparatorRegion", 6:"OtherRegion"}
-models = {'magazine':lp.AutoLayoutModel("lp://detectron2/PrimaLayout/mask_rcnn_R_50_FPN_3x")}
+
+color_map = {
+    'TextRegion':   'red',
+    'ImageRegion':  'blue',
+    'TableRegion':   'green',
+    'MathsRegion':  'purple',
+    'SeparatorRegion': 'pink',
+    'OtherRegion': 'pink',
+}
 
 st.set_page_config(layout="wide")
 
-@st.experimental_memo
-def load_model(model_path=None):
-    #model = lp.Detectron2LayoutModel('lp://PubLayNet/faster_rcnn_R_50_FPN_3x/config',
-    #                                 extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.8],
-    #                                 label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"})
-    model = models['magazine']
-    return model
 
 
-with st.sidebar:
+
+with st.sidebar.expander("Upload PDF and detect the layout", expanded=True):
     uploaded_file = st.file_uploader("Select the PDF", type="pdf")
     if uploaded_file is not None:
         if uploaded_file.type == "application/pdf":
@@ -39,21 +42,36 @@ with st.sidebar:
             page.save(f'pdf_extract/{ids}-out.png', 'PNG')
 
 
-with st.sidebar.expander("Input Data", expanded=True):
+with st.sidebar.expander("Load image files and detect the layout", expanded=True):
     types = ('samples/*.png', 'samples/*.jpeg', 'pdf_extract/*.png')  # the tuple of file types
     files_grabbed = []
     for files in types:
         files_grabbed.extend(glob.glob(files))
 
-    file_grabbbed = st.selectbox('Select Input Data: ', files_grabbed)
+    file_grabbbed = st.selectbox('Select Images: ', files_grabbed)
     st.write(f'File Selected:')
     st.write(file_grabbbed)
 
-with st.sidebar.expander('Select Model', expanded=True):
-    st.selectbox('Models: ', ['Magazine', 'Newspaper', 'Academic Papers'])
+with st.sidebar.expander('Select Models to perform layout detection', expanded=True):
+    st.selectbox('Select Models: ', ['Magazine', 'Newspaper', 'Academic Papers'])
+    ocr_selected = st.checkbox('Activate OCR')
+with st.sidebar.expander('Hyperparameter Selection, use with care'):
+    score_thres = st.slider('Score Threshold', 0.5, 0.99, 0.85)
+    nms_thres = st.slider('NMS Threshold', 0.5, 0.99, 0.75)
 
 
+models = {'magazine':lp.AutoLayoutModel("lp://detectron2/PrimaLayout/mask_rcnn_R_50_FPN_3x",
+                                        label_map = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion", 4:"MathsRegion", 5:"SeparatorRegion", 6:"OtherRegion"},
+                                        extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", score_thres,
+                                                      "MODEL.ROI_HEADS.NMS_THRESH_TEST", nms_thres])}
 
+
+def load_model(model_path=None):
+    #model = lp.Detectron2LayoutModel('lp://PubLayNet/faster_rcnn_R_50_FPN_3x/config',
+    #                                 extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.8],
+    #                                 label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"})
+    model = models['magazine']
+    return model
 
 ## Title.
 st.title('Layout Detection')
@@ -72,6 +90,7 @@ else:
 # Display image.
 
 original, detected = st.columns(2)
+
 with original:
 
     st.image(image, caption='Original Image', use_column_width=True)
@@ -80,51 +99,33 @@ model = load_model()
 
 layout = model.detect(image)
 
-text_blocks = lp.Layout([b for b in layout if b.type==1])
-image_blocks = lp.Layout([b for b in layout if b.type==2])
-table_blocks = lp.Layout([b for b in layout if b.type==3])
+text_blocks = lp.Layout([b for b in layout if b.type==primaLayout[1]])
+image_blocks = lp.Layout([b for b in layout if b.type==primaLayout[2]])
+table_blocks = lp.Layout([b for b in layout if b.type==primaLayout[3]])
 text_blocks = lp.Layout([b for b in text_blocks \
                          if not any(b.is_in(b_fig) for b_fig in image_blocks)])
-ocr_agent = lp.TesseractAgent(languages='eng')
+
 
 
 with detected:
-    image2 = lp.draw_box(image, layout, box_width=5)
+    image2 = lp.draw_box(image, layout, box_width=5, color_map=color_map)
     st.image(image2, caption='All Detected Regions', use_column_width=True)
 
 
-st.markdown('### Detected Texts and Figure Regions')
+st.markdown('### Detected Texts and Figure Regions Separately')
 
 text_col, image_col = st.columns(2)
 
 with text_col:
-    text_image = lp.draw_box(image, text_blocks, box_width=3, show_element_id=True)
+    text_image = lp.draw_box(image, text_blocks, box_width=3, show_element_id=True,  color_map=color_map)
     st.image(text_image, caption='Detected Text Blocks', use_column_width=True)
 
 with image_col:
-    image2 = lp.draw_box(image, image_blocks, box_width=5)
+    image2 = lp.draw_box(image, image_blocks, box_width=5, show_element_id=True,  color_map=color_map)
     st.image(image2, caption='Detected Image Blocks', use_column_width=True)
 
 text_col1, image_col1 = st.columns(2)
 
-for block in text_blocks:
-    segment_image = (block
-                       .pad(left=5, right=5, top=5, bottom=5)
-                       .crop_image(image))
-        # add padding in each image segment can help
-        # improve robustness
-
-    text = ocr_agent.detect(segment_image)
-    block.set(text=text, inplace=True)
-
-text_list = [txt for txt in text_blocks.get_texts()]
-
-
-with text_col1:
-    st.table(text_list)
-with image_col1:
-    st.image(text_image, caption='Text Captured Image', use_column_width=True)
-
-
-table_image = lp.draw_box(image, table_blocks, box_width=5, show_element_id=True)
-st.image(table_image, caption='Table Captured Image', use_column_width=True)
+if ocr_selected:
+    ocr_agent = lp.TesseractAgent(languages='eng')
+    text_list = detect_text(ocr_agent, text_blocks, image)
