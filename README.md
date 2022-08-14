@@ -42,3 +42,7 @@ After select the input image or upload the PDF file, one can choose a model base
     {0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon", 4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"}
     - Academic Papers: Trained from the PubLayNet dataset, mostly used in academic paper and reports
     , it includes 5 classes:{0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"}
+- Choice of HyperParameters:
+Choose detection Score threshold and NMS threshold can effectively remove false positives or increase accuracy, use with care. 
+ ![image](https://user-images.githubusercontent.com/358454/184547439-8c84735e-1293-4400-bd73-88109332b594.png)
+    
