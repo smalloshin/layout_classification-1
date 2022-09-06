@@ -1,6 +1,6 @@
 # layout_classification
 
-## Docker usage
+## Installation With Docker
 
 ```=sh
 docker build -t streamlit .
