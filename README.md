@@ -1,6 +1,14 @@
 # layout_classification
 
-## Installation
+## Docker usage
+
+```=sh
+docker build -t streamlit .
+docker run -p 8501:8501 streamlit
+```
+> Based on your server's network configuration, you could map to port 80/443 so that users can view your app using the server IP or hostname. For example: http://your-server-ip:80 or http://your-hostname:443.
+
+## Installation -without docker
 
 ```=sh
 conda create -n layout python=3.9
