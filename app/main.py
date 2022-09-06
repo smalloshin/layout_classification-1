@@ -32,7 +32,7 @@ st.set_page_config(layout="wide")
 
 
 
-with st.sidebar.expander("Upload PDF and detect the layout", expanded=True):
+with st.sidebar.expander("Upload PDF and detect the layout", expanded=False):
     uploaded_file = st.file_uploader("Select the PDF", type="pdf")
     if uploaded_file is not None:
         if uploaded_file.type == "application/pdf":
@@ -48,43 +48,52 @@ with st.sidebar.expander("Load image files and detect the layout", expanded=True
     for files in types:
         files_grabbed.extend(glob.glob(files))
 
-    file_grabbbed = st.selectbox('Select Images: ', files_grabbed)
+    file_grabbed = st.selectbox('Select Images: ', files_grabbed)
     st.write(f'File Selected:')
-    st.write(file_grabbbed)
+    st.write(file_grabbed)
 
 with st.sidebar.expander('Select Models to perform layout detection', expanded=True):
-    st.selectbox('Select Models: ', ['Magazine', 'Newspaper', 'Academic Papers'])
+    select_model = st.selectbox('Select Models: ', ['Magazine', 'Newspaper', 'AcademicPapers'])
     ocr_selected = st.checkbox('Activate OCR')
 with st.sidebar.expander('Hyperparameter Selection, use with care'):
     score_thres = st.slider('Score Threshold', 0.5, 0.99, 0.85)
     nms_thres = st.slider('NMS Threshold', 0.5, 0.99, 0.75)
 
 
-models = {'magazine':lp.AutoLayoutModel("lp://detectron2/PrimaLayout/mask_rcnn_R_50_FPN_3x",
+models = {'Magazine':lp.AutoLayoutModel("lp://detectron2/PrimaLayout/mask_rcnn_R_50_FPN_3x",
                                         label_map = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion", 4:"MathsRegion", 5:"SeparatorRegion", 6:"OtherRegion"},
+                                        extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", score_thres,
+                                                      "MODEL.ROI_HEADS.NMS_THRESH_TEST", nms_thres]),
+          'Newspaper':lp.AutoLayoutModel("lp://NewspaperNavigator/faster_rcnn_R_50_FPN_3x/config",
+                                        label_map = {0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon", 4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"},
+                                        extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", score_thres,
+                                                      "MODEL.ROI_HEADS.NMS_THRESH_TEST", nms_thres]),
+          'AcademicPapers':lp.AutoLayoutModel("lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config",
+                                        label_map = {0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"},
                                         extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", score_thres,
                                                       "MODEL.ROI_HEADS.NMS_THRESH_TEST", nms_thres])}
 
 
-def load_model(model_path=None):
-    #model = lp.Detectron2LayoutModel('lp://PubLayNet/faster_rcnn_R_50_FPN_3x/config',
-    #                                 extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.8],
-    #                                 label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"})
-    model = models['magazine']
+@st.experimental_singleton
+def load_model(select_model=None):
+    if not select_model:
+        model = models['Magazine']
+    else:
+        model = models[select_model]
     return model
 
 ## Title.
 st.title('Layout Detection')
 
-if file_grabbbed is None:
+if file_grabbed is None:
     # Default image.
     url = 'https://github.com/matthewbrems/streamlit-bccd/blob/master/BCCD_sample_images/BloodImage_00038_jpg.rf.6551ec67098bc650dd650def4e8a8e98.jpg?raw=true'
     image = Image.open(requests.get(url, stream=True).raw)
-
+    st.info("Input file Not available ")
 else:
     # User-selected image.
-    image = Image.open(file_grabbbed)
-    image = cv2.imread(file_grabbbed)
+    image = Image.open(file_grabbed)
+    image = cv2.imread(file_grabbed)
     image = image[..., ::-1]
 
 # Display image.
@@ -106,9 +115,15 @@ text_blocks = lp.Layout([b for b in text_blocks \
                          if not any(b.is_in(b_fig) for b_fig in image_blocks)])
 
 
-
+st.write(layout)
 with detected:
-    image2 = lp.draw_box(image, layout, box_width=5, color_map=color_map)
+    #image2 = lp.draw_box(image, layout, box_width=5, color_map=color_map)
+    image2 = lp.draw_box(image, [b.set(id=f'{b.type}') for b in layout],
+              color_map=color_map,
+              box_width=5,
+              show_element_id=True, id_font_size=16,
+              id_text_background_color='black',
+              id_text_color='white')
     st.image(image2, caption='All Detected Regions', use_column_width=True)
 
 

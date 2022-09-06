@@ -11,8 +11,10 @@ import cv2
 from pdf2image import convert_from_path, convert_from_bytes
 
 
-primaLayout = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion",
-               4:"MathsRegion",5:"SeparatorRegion", 6:"OtherRegion"}
+magazineLayout = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion",
+                  4:"MathsRegion",5:"SeparatorRegion", 6:"OtherRegion"}
+newspaperLayout = {0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cartoon",
+                   4: "Editorial Cartoon", 5: "Headline", 6: "Advertisement"}
 models = {'magazine': lp.AutoLayoutModel("lp://detectron2/PrimaLayout/mask_rcnn_R_50_FPN_3x")}
 
 
@@ -30,3 +32,10 @@ def detect_text(ocr_agent, text_blocks, image):
     text_list = [txt for txt in text_blocks.get_texts()]
 
     return text_list
+
+
+def count_types(layout, layoutTypes=magazineLayout):
+
+    #enumerate_list = [(index, element) for index, element in enumerate(a_list)]
+    blocks = [b for b in layout if b.type == layoutTypes[1]]
+
