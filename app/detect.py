@@ -18,7 +18,19 @@ newspaperLayout = {0: "Photograph", 1: "Illustration", 2: "Map", 3: "Comics/Cart
 models = {'magazine': lp.AutoLayoutModel("lp://detectron2/PrimaLayout/mask_rcnn_R_50_FPN_3x")}
 
 
-def detect_text(ocr_agent, text_blocks, image):
+def detect_text(ocr_agent, text_block, image):
+    segment_image = (text_block
+                     .pad(left=5, right=5, top=5, bottom=5)
+                     .crop_image(image))
+    # add padding in each image segment can help
+    # improve robustness
+
+    text = ocr_agent.detect(segment_image)
+    text_block.set(text=text, inplace=True)
+    return text
+
+
+def detect_text_list(ocr_agent, text_blocks, image):
     for block in text_blocks:
         segment_image = (block
                          .pad(left=5, right=5, top=5, bottom=5)
@@ -39,3 +51,6 @@ def count_types(layout, layoutTypes=magazineLayout):
     #enumerate_list = [(index, element) for index, element in enumerate(a_list)]
     blocks = [b for b in layout if b.type == layoutTypes[1]]
 
+
+def parse_layout(layouts):
+    pass

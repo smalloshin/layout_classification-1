@@ -8,12 +8,12 @@ from PIL import Image
 import glob
 from base64 import decodebytes
 from io import BytesIO
-import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import layoutparser as lp
 import cv2
 from pdf2image import convert_from_path, convert_from_bytes
-from detect import detect_text
+from detect import detect_text_list, detect_text
 
 primaLayout = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion", 4:"MathsRegion",
                5:"SeparatorRegion", 6:"OtherRegion"}
@@ -113,9 +113,36 @@ image_blocks = lp.Layout([b for b in layout if b.type==primaLayout[2]])
 table_blocks = lp.Layout([b for b in layout if b.type==primaLayout[3]])
 text_blocks = lp.Layout([b for b in text_blocks \
                          if not any(b.is_in(b_fig) for b_fig in image_blocks)])
+#detected_info = pd.DataFrame(vars(c) for c in layout)
+#st.write(detected_info)
+if ocr_selected:
+    ocr_agent = lp.TesseractAgent(languages='eng')
+    #text_list = detect_text_list(ocr_agent, layout, image)
+layout_collections = list()
+
+st.markdown('### Image Information')
+st.metric(label="Image Size(Height, Width)", value=f'{image.shape[1]}*{image.shape[0]}')
 
 
-st.write(layout)
+for ob in layout:
+    layout_dic = dict()
+    layout_dic['id'] = ob.id
+    layout_dic['detect_type'] = ob.type
+    if ocr_selected:
+        layout_dic['text'] = detect_text(ocr_agent, ob, image)
+    layout_dic['parent'] = ob.parent
+    layout_dic['rect_left'] = ob.block.coordinates[0]
+    layout_dic['rect_right'] = ob.block.coordinates[1]
+
+    layout_dic['detect_score'] = ob.score
+    #layout_dic['']
+    layout_collections.append(layout_dic)
+detected_info = pd.DataFrame(layout_collections)
+st.table(detected_info)
+
+#for ob in layout:
+#
+#    st.write(ob)
 with detected:
     #image2 = lp.draw_box(image, layout, box_width=5, color_map=color_map)
     image2 = lp.draw_box(image, [b.set(id=f'{b.type}') for b in layout],
@@ -132,15 +159,15 @@ st.markdown('### Detected Texts and Figure Regions Separately')
 text_col, image_col = st.columns(2)
 
 with text_col:
+    st.metric(label="Number of Text Boxes Detected", value=len(text_blocks))
     text_image = lp.draw_box(image, text_blocks, box_width=3, show_element_id=True,  color_map=color_map)
     st.image(text_image, caption='Detected Text Blocks', use_column_width=True)
 
 with image_col:
+    st.metric(label="Number of Image Boxes Detected", value=len(image_blocks))
     image2 = lp.draw_box(image, image_blocks, box_width=5, show_element_id=True,  color_map=color_map)
     st.image(image2, caption='Detected Image Blocks', use_column_width=True)
 
-text_col1, image_col1 = st.columns(2)
 
-if ocr_selected:
-    ocr_agent = lp.TesseractAgent(languages='eng')
-    text_list = detect_text(ocr_agent, text_blocks, image)
+
+

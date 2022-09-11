@@ -15,9 +15,14 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install layoutparser torchvision && pip install "git+https://github.com/facebookresearch/detectron2.git@v0.5#egg=detectron2"
 
+RUN apt-get install tesseract-ocr \
+    libtesseract-dev
+
+RUN pip install pip install "layoutparser[ocr]"
+
 RUN git clone https://github.com/bluekidds/layout_classification.git .
 
 
 RUN pip3 install -r requirements.txt
 
-#ENTRYPOINT ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
