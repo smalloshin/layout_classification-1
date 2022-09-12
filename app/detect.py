@@ -1,14 +1,6 @@
-import base64
-import io
-from PIL import Image
-import glob
-from base64 import decodebytes
-from io import BytesIO
-import numpy as np
-import matplotlib.pyplot as plt
 import layoutparser as lp
+import pandas as pd
 import cv2
-from pdf2image import convert_from_path, convert_from_bytes
 
 
 magazineLayout = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion",
@@ -52,5 +44,21 @@ def count_types(layout, layoutTypes=magazineLayout):
     blocks = [b for b in layout if b.type == layoutTypes[1]]
 
 
-def parse_layout(layouts):
-    pass
+def parse_layout(layout, ocr_agent, image, ocr_selected=False):
+    layout_collections = list()
+    for ob in layout:
+        layout_dic = dict()
+        layout_dic['id'] = ob.id
+        layout_dic['detect_type'] = ob.type
+        if ocr_selected:
+            layout_dic['text'] = detect_text(ocr_agent, ob, image)
+        layout_dic['parent'] = ob.parent
+        layout_dic['rect_left'] = ob.block.coordinates[0]
+        layout_dic['rect_right'] = ob.block.coordinates[1]
+
+        layout_dic['detect_score'] = ob.score
+        # layout_dic['']
+        layout_collections.append(layout_dic)
+    detected_info = pd.DataFrame(layout_collections)
+
+    return detected_info

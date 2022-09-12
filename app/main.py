@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import layoutparser as lp
 import cv2
 from pdf2image import convert_from_path, convert_from_bytes
-from detect import detect_text_list, detect_text
+from detect import detect_text_list, detect_text, parse_layout
 
 primaLayout = {1:"TextRegion", 2:"ImageRegion", 3:"TableRegion", 4:"MathsRegion",
                5:"SeparatorRegion", 6:"OtherRegion"}
@@ -28,19 +28,6 @@ color_map = {
 }
 
 st.set_page_config(layout="wide")
-
-
-
-
-with st.sidebar.expander("Upload PDF and detect the layout", expanded=False):
-    uploaded_file = st.file_uploader("Select the PDF", type="pdf")
-    if uploaded_file is not None:
-        if uploaded_file.type == "application/pdf":
-            pages = convert_from_bytes(uploaded_file.read())
-
-        for ids, page in enumerate(pages):
-            page.save(f'pdf_extract/{ids}-out.png', 'PNG')
-
 
 with st.sidebar.expander("Load image files and detect the layout", expanded=True):
     types = ('samples/*.png', 'samples/*.jpeg', 'pdf_extract/*.png')  # the tuple of file types
@@ -113,38 +100,18 @@ image_blocks = lp.Layout([b for b in layout if b.type==primaLayout[2]])
 table_blocks = lp.Layout([b for b in layout if b.type==primaLayout[3]])
 text_blocks = lp.Layout([b for b in text_blocks \
                          if not any(b.is_in(b_fig) for b_fig in image_blocks)])
-#detected_info = pd.DataFrame(vars(c) for c in layout)
-#st.write(detected_info)
+
 if ocr_selected:
     ocr_agent = lp.TesseractAgent(languages='eng')
-    #text_list = detect_text_list(ocr_agent, layout, image)
-layout_collections = list()
 
-st.markdown('### Image Information')
+
+st.markdown('### Display Image Information')
 st.metric(label="Image Size(Height, Width)", value=f'{image.shape[1]}*{image.shape[0]}')
 
-
-for ob in layout:
-    layout_dic = dict()
-    layout_dic['id'] = ob.id
-    layout_dic['detect_type'] = ob.type
-    if ocr_selected:
-        layout_dic['text'] = detect_text(ocr_agent, ob, image)
-    layout_dic['parent'] = ob.parent
-    layout_dic['rect_left'] = ob.block.coordinates[0]
-    layout_dic['rect_right'] = ob.block.coordinates[1]
-
-    layout_dic['detect_score'] = ob.score
-    #layout_dic['']
-    layout_collections.append(layout_dic)
-detected_info = pd.DataFrame(layout_collections)
+detected_info = parse_layout(layout, ocr_agent, image, ocr_selected)
 st.table(detected_info)
 
-#for ob in layout:
-#
-#    st.write(ob)
 with detected:
-    #image2 = lp.draw_box(image, layout, box_width=5, color_map=color_map)
     image2 = lp.draw_box(image, [b.set(id=f'{b.type}') for b in layout],
               color_map=color_map,
               box_width=5,
