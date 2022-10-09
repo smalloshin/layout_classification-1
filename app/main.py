@@ -103,7 +103,8 @@ text_blocks = lp.Layout([b for b in text_blocks \
 
 if ocr_selected:
     ocr_agent = lp.TesseractAgent(languages='eng')
-
+else:
+    ocr_agent = None
 
 st.markdown('### Display Image Information')
 st.metric(label="Image Size(Height, Width)", value=f'{image.shape[1]}*{image.shape[0]}')

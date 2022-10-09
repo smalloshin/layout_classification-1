@@ -38,10 +38,22 @@ def detect_text_list(ocr_agent, text_blocks, image):
     return text_list
 
 
-def count_types(layout, layoutTypes=magazineLayout):
+def parse_layout_api(layout, label_mapping=False):
+    layout_collections = list()
+    for ob, index in zip(layout, range(len(layout))):
+        layout_dic = dict()
+        layout_dic['id'] = index
+        if label_mapping:
+            layout_dic['type'] = label_mapping[ob.type]
+        else:
+            layout_dic['type'] = ob.type
 
-    #enumerate_list = [(index, element) for index, element in enumerate(a_list)]
-    blocks = [b for b in layout if b.type == layoutTypes[1]]
+        layout_dic['rect_left'] = round(ob.block.coordinates[0],2)
+        layout_dic['rect_right'] = round(ob.block.coordinates[1],2)
+
+        layout_dic['confidence'] = round(ob.score, 4)
+        layout_collections.append(layout_dic)
+    return layout_collections
 
 
 def parse_layout(layout, ocr_agent, image, ocr_selected=False):
