@@ -48,10 +48,10 @@ def parse_layout_api(layout, label_mapping=False):
         else:
             layout_dic['type'] = ob.type
 
-        layout_dic['rect_left'] = round(ob.block.coordinates[0],2)
-        layout_dic['rect_right'] = round(ob.block.coordinates[1],2)
+        layout_dic['rect_left'] = ob.block.coordinates[0]
+        layout_dic['rect_right'] = ob.block.coordinates[1]
 
-        layout_dic['confidence'] = round(ob.score, 4)
+        layout_dic['confidence'] = ob.score
         layout_collections.append(layout_dic)
     return layout_collections
 
