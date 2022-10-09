@@ -2,7 +2,7 @@
 
 ## Start API service
 
-After starting docker, one can start the API service with the following:
+After starting docker, one can choose to start the prototype using dockerfile provided or login into docker instance and start the API service with the following:
 
 ```=sh
 pinfer app:service --reload
