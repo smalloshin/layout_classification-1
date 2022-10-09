@@ -1,5 +1,13 @@
 # layout_classification
 
+## Start API service
+
+After starting docker, one can start the API service with the following:
+
+```=sh
+pinfer app:service --reload
+```
+
 ## Installation With Docker
 
 ```=sh
