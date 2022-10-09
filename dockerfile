@@ -22,7 +22,7 @@ RUN pip install pip install "layoutparser[ocr]"
 
 RUN git clone https://github.com/bluekidds/layout_classification.git .
 
-
+RUN pip install "pinferencia[streamlit]"
 RUN pip3 install -r requirements.txt
 
 ENTRYPOINT ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
