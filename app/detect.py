@@ -68,7 +68,7 @@ def parse_layout(layout, ocr_agent, image, ocr_selected=False):
         layout_dic['rect_left'] = ob.block.coordinates[0]
         layout_dic['rect_right'] = ob.block.coordinates[1]
 
-        layout_dic['detect_score'] = ob.score
+        layout_dic['confidence'] = ob.score
         # layout_dic['']
         layout_collections.append(layout_dic)
     detected_info = pd.DataFrame(layout_collections)
