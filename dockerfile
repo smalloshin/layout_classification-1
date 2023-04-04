@@ -20,7 +20,7 @@ RUN apt-get install tesseract-ocr \
 
 RUN pip install pip install "layoutparser[ocr]"
 
-RUN git clone https://github.com/bluekidds/layout_classification.git .
+RUN git clone https://github.com/smalloshin/layout_classification.git .
 
 RUN pip install "pinferencia[streamlit]"
 
