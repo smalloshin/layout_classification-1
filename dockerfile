@@ -15,8 +15,6 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install layoutparser torchvision && pip install "git+https://github.com/facebookresearch/detectron2.git@v0.5#egg=detectron2"
 
-RUN apt-get install tesseract-ocr \
-    libtesseract-dev
 
 RUN pip install pip install "layoutparser[ocr]"
 
